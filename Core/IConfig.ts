@@ -23,5 +23,5 @@ export interface IConfig {
     keyPath?: string;
     certPath?: string;
     mongo: IMongoConfig;
-    log?: log4js.AppenderConfig[];
+    log?: log4js.IConfig;
 }

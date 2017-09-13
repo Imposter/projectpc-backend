@@ -5,14 +5,14 @@
         "sourceMap": true,
         "noImplicitAny": true,
         "removeComments": true,
-        "allowSyntheticDefaultImports": true
+        "allowSyntheticDefaultImports": true,
+        "emitDecoratorMetadata": true,
+        "experimentalDecorators": true
     },
     "exclude": [
         "node_modules",
         "obj",
         "bin",
         ".vs"
-    ],
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true
+    ]
 }

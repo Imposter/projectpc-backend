@@ -16,14 +16,11 @@ import * as fs from "fs";
 import * as http from "http";
 import * as https from "https";
 import * as express from "express";
-const config: IConfig = require("config.json");
+const config: IConfig = require("./config.json");
 const mongoSanitize = require("express-mongo-sanitize");
 
 // Initialize logger
-log4js.configure(<log4js.IConfig> {
-	appenders: config.log,
-	replaceConsole: true
-});
+log4js.configure(config.log);
 
 const log: log4js.Logger = log4js.getLogger("Main");
 
