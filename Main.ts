@@ -1,17 +1,34 @@
-﻿import { IConfig } from "./Core/IConfig";
+﻿/*
+*   This file is part of the carMeet project.
+*
+*   This program is licensed under the GNU General
+*   Public License. To view the full license, check
+*   LICENSE in the project root.
+*/
+
+import { IConfig } from "./Core/IConfig";
+import ClusterManager from "./Utility/ClusterManager";
 import "reflect-metadata";
 import * as rc from "routing-controllers";
 import * as mongoose from "mongoose";
+import * as log4js from "log4js";
+import * as fs from "fs";
+import * as http from "http";
+import * as https from "https";
+import * as express from "express";
 const config: IConfig = require("config.json");
 const mongoSanitize = require("express-mongo-sanitize");
 
-// test
-import { IUserModel, Users } from "./Models/UserModel";
+// Initialize logger
+log4js.configure(<log4js.IConfig> {
+	appenders: config.log,
+	replaceConsole: true
+});
+
+const log: log4js.Logger = log4js.getLogger("Main");
 
 // Program entrypoint
 async function main() {
-	// TODO: Configure logger
-
 	// Configure mongoose
 	(<any>mongoose).Promise = global.Promise;
 
@@ -27,27 +44,30 @@ async function main() {
 		await mongoose.connect(connectionString, {
 			useMongoClient: true
 		});
-
-		var result = await Users.create(<IUserModel> { // Instead of interfaces, use classes
-			name: "Imposter",
-			email: "eyaz.rehman@uoit.ca",
-			firstName: "Eyaz",
-			lastName: "Rehman"
-		});
-		console.log(result);
-
-		result = await Users.findOne({ name: /Imp/g }); // TODO: In production, use new RegExp(`/${param}/g`); or w.e. the expression is
-		console.log(result);
 	} catch (error) {
-		console.log("ERROR: " + error);
+		log.error(error);
+		return;
 	}
 
-	// TODO: Manually create express server
+	var secure = config.secure || false;
+	var key = (!secure || config.keyPath == null) ? new Buffer("") : fs.readFileSync(config.keyPath);
+	var cert = (!secure || config.certPath == null) ? new Buffer("") : fs.readFileSync(config.certPath);
 
-	// TODO: Use cluster to create multiple instances
+	// Create express app and server depending on config
+	var app = express();
+	var server = null;
+	if (!secure) {
+		server = http.createServer(app);
+	} else {
+		this.server = https.createServer({
+			key: this.key,
+			cert: this.cert,
+			requestCert: true
+		}, this.app);
+	}
 
-	// Create express server
-	const app = rc.createExpressServer({
+	// Apply routing config to express app
+	rc.useExpressServer(app, {
 		controllers: [ `${__dirname}/Controllers/*.js` ],
 		routePrefix: "/api",
 
@@ -59,10 +79,64 @@ async function main() {
 	app.use(mongoSanitize());
 
 	// Start listening on port
-	app.listen(config.port);
+	server.listen(config.port);
 
-	console.log(`Server is running on port ${config.port}`);
+	log.info(`Server is running on port ${config.port}`);
 }
 
-// Execute entrypoint
-main();
+// Manage cluster
+if (ClusterManager.IsMasterWorker()) {
+    log.info("Initializing cluster...");
+    ClusterManager.Initialize();
+
+    // Create shutdown handler
+    var shutdownHandler = (error: any) => {
+        // Shutdown cluster
+        ClusterManager.Shutdown();
+
+        // Print stack trace if necessary
+        if (error != null && error.stack != null) {
+            log.error(`CRITICAL: ${error.stack}`);
+            process.exit(-1);
+        }
+        process.exit(0);
+    };
+    process.on("exit", shutdownHandler.bind(null))
+        .on("uncaughtException", shutdownHandler.bind(null))
+        .on("SIGINT", shutdownHandler.bind(null));
+
+    var threadCount = ClusterManager.GetCPUThreads();
+    log.info(`CPU Thread Count: ${threadCount}`);
+    if (config.maxWorkers != null && config.maxWorkers != 0) {
+        threadCount = threadCount > config.maxWorkers ? config.maxWorkers : threadCount;
+    }
+    log.info(`Max workers: ${threadCount}`);
+
+    // Create worker for each thread
+    for (var i = 0; i < threadCount; i++) {
+        var worker = ClusterManager.CreateWorker();
+        log.info(`Created worker ${i + 1} (id: ${worker.id}, pid: ${worker.process.pid})`);
+    }
+
+    log.info("Master idling...");
+} else {
+    // Get worker
+    var worker = ClusterManager.GetCurrentWorker();
+
+    // Add shutdown handler
+    var shutdownHandler = (error: any) => {
+        log.info("Shutting down...");
+
+        // Print stack trace if necessary
+        if (error != null && error.stack != null) {
+            log.error(`CRITICAL: ${error.stack}`);
+        }
+        ClusterManager.DestroyWorker();
+    };
+    worker.on("exit", shutdownHandler.bind(null))
+        .on("uncaughtException", shutdownHandler.bind(null))
+        .on("SIGINT", shutdownHandler.bind(null));
+
+	// Execute entrypoint
+    main();
+}
