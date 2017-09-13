@@ -1,0 +1,16 @@
+{
+    "compilerOptions": {
+        "target": "es2015",
+        "module": "commonjs",
+        "sourceMap": true,
+        "allowSyntheticDefaultImports": true
+    },
+    "exclude": [
+        "node_modules",
+        "obj",
+        "bin",
+        ".vs"
+    ],
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true
+}
