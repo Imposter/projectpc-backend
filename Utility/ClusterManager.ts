@@ -1,12 +1,3 @@
-/*
-*   This file is part of the carMeet project.
-*
-*   This program is licensed under the GNU General
-*   Public License. To view the full license, check
-*   LICENSE in the project root.
-*/
-
-// Imports
 import * as cluster from "cluster";
 import * as os from "os";
 import * as log4js from "log4js";
@@ -36,20 +27,20 @@ export default class ClusterManager {
             }
         });
         cluster.on("online", (worker: cluster.Worker) => {
-            ClusterManager.log.info("ClusterManager", `Worker ${worker.id} is now online`);
+            ClusterManager.log.info(`Worker ${worker.id} is now online`);
         });
         cluster.on("listening", (worker: cluster.Worker) => {
-            ClusterManager.log.info("ClusterManager", `Worker ${worker.id} is now listening`);
+            ClusterManager.log.info(`Worker ${worker.id} is now listening`);
         });
         cluster.on("disconnect", (worker: cluster.Worker) => {
-            ClusterManager.log.warn("ClusterManager", `Worker ${worker.id} has disconnected`);
+            ClusterManager.log.warn(`Worker ${worker.id} has disconnected`);
         });
         cluster.on("exit", (worker: cluster.Worker, code: number, signal: string) => {
             var index = self.workers.indexOf(worker);
             if (signal != "end" && index != -1) {
                 var newWorker = cluster.fork();
                 this.workers[index] = newWorker;
-                ClusterManager.log.warn("ClusterManager", `Worker ${worker.id} stopped unexpectedly, created new worker ${newWorker.id}`);
+                ClusterManager.log.warn(`Worker ${worker.id} stopped unexpectedly, created new worker ${newWorker.id}`);
             }
         });
 
@@ -66,7 +57,7 @@ export default class ClusterManager {
             var worker = this.workers[i];
             worker.kill("end");
         }
-        ClusterManager.log.info("ClusterManager", "Killed all workers");
+        ClusterManager.log.info("Killed all workers");
 
         this.initialized = false;
 
@@ -77,7 +68,7 @@ export default class ClusterManager {
         // Fork a process and store the newly created process
         var worker = cluster.fork();
         this.workers.push(worker);
-        ClusterManager.log.info("ClusterManager", `Created worker ${worker.id}`);
+        ClusterManager.log.info(`Created worker ${worker.id}`);
         return worker;
     }
 
@@ -92,7 +83,7 @@ export default class ClusterManager {
         }
         this.workers.splice(index, 1);
         worker.kill("end");
-        ClusterManager.log.info("ClusterManager", `Killed worker ${worker.id}`);
+        ClusterManager.log.info(`Killed worker ${worker.id}`);
         return true;
     }
 

@@ -3,7 +3,6 @@
         "target": "es2015",
         "module": "commonjs",
         "sourceMap": true,
-        "noImplicitAny": true,
         "removeComments": true,
         "allowSyntheticDefaultImports": true,
         "emitDecoratorMetadata": true,

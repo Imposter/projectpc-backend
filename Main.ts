@@ -1,14 +1,6 @@
-﻿/*
-*   This file is part of the carMeet project.
-*
-*   This program is licensed under the GNU General
-*   Public License. To view the full license, check
-*   LICENSE in the project root.
-*/
-
-import { IConfig } from "./Core/IConfig";
+﻿import { IConfig } from "./IConfig";
 import ClusterManager from "./Utility/ClusterManager";
-import "reflect-metadata";
+import AuthChecker from "./Core/AuthChecker";
 import * as rc from "routing-controllers";
 import * as mongoose from "mongoose";
 import * as log4js from "log4js";
@@ -16,12 +8,14 @@ import * as fs from "fs";
 import * as http from "http";
 import * as https from "https";
 import * as express from "express";
+import session from "express-session";
+import MongoDBStore from "connect-mongodb-session";
+import v4 from "uuid/v4";
 const config: IConfig = require("./config.json");
 const mongoSanitize = require("express-mongo-sanitize");
 
 // Initialize logger
 log4js.configure(config.log);
-
 const log: log4js.Logger = log4js.getLogger("Main");
 
 // Program entrypoint
@@ -41,21 +35,22 @@ async function main() {
 		await mongoose.connect(connectionString, {
 			useMongoClient: true
 		});
+
+		log.info(`Connected to MongoDB: ${config.mongo.host}:${config.mongo.port}`);
 	} catch (error) {
-		log.error(error);
+		log.error(`Failed to connect to MongoDB: ${error}`);
 		return;
 	}
-
-	var secure = config.secure || false;
-	var key = (!secure || config.keyPath == null) ? new Buffer("") : fs.readFileSync(config.keyPath);
-	var cert = (!secure || config.certPath == null) ? new Buffer("") : fs.readFileSync(config.certPath);
 
 	// Create express app and server depending on config
 	var app = express();
 	var server = null;
-	if (!secure) {
+	if (!config.secure) {
 		server = http.createServer(app);
 	} else {
+		var key = config.keyPath == null ? new Buffer("") : fs.readFileSync(config.keyPath);
+		var cert = config.certPath == null ? new Buffer("") : fs.readFileSync(config.certPath);
+
 		this.server = https.createServer({
 			key: this.key,
 			cert: this.cert,
@@ -67,12 +62,33 @@ async function main() {
 	rc.useExpressServer(app, {
 		controllers: [ `${__dirname}/Controllers/*.js` ],
 		routePrefix: "/api",
-
-		// TODO: ...
-		authorizationChecker: null,
+		authorizationChecker: AuthChecker,
 	});
 
+	// Trust proxy if behind one
+	if (config.behindProxy) {
+		app.set("trust proxy", 1);
+	}
+
 	// Global middleware
+	app.use((error: Error, request: express.Request, response: express.Response, next: any) => {
+		log.error(`Express error: ${error.stack}`);
+		next(error);
+	});
+	app.use(session({
+		genid: () => v4(),
+		secret: config.sessionSecret,
+		resave: false,
+		saveUninitialized: true,
+		cookie: { 
+			secure: config.secure || config.behindProxy,
+			maxAge: config.sessionTimeout
+		},
+		store: new MongoDBStore({
+			uri: connectionString,
+			collection: "sessions"
+		})
+	}));
 	app.use(mongoSanitize());
 
 	// Start listening on port
@@ -86,24 +102,8 @@ if (ClusterManager.IsMasterWorker()) {
     log.info("Initializing cluster...");
     ClusterManager.Initialize();
 
-    // Create shutdown handler
-    var shutdownHandler = (error: any) => {
-        // Shutdown cluster
-        ClusterManager.Shutdown();
-
-        // Print stack trace if necessary
-        if (error != null && error.stack != null) {
-            log.error(`CRITICAL: ${error.stack}`);
-            process.exit(-1);
-        }
-        process.exit(0);
-    };
-    process.on("exit", shutdownHandler.bind(null))
-        .on("uncaughtException", shutdownHandler.bind(null))
-        .on("SIGINT", shutdownHandler.bind(null));
-
     var threadCount = ClusterManager.GetCPUThreads();
-    log.info(`CPU Thread Count: ${threadCount}`);
+    log.info(`CPU threads: ${threadCount}`);
     if (config.maxWorkers != null && config.maxWorkers != 0) {
         threadCount = threadCount > config.maxWorkers ? config.maxWorkers : threadCount;
     }
@@ -117,23 +117,6 @@ if (ClusterManager.IsMasterWorker()) {
 
     log.info("Master idling...");
 } else {
-    // Get worker
-    var worker = ClusterManager.GetCurrentWorker();
-
-    // Add shutdown handler
-    var shutdownHandler = (error: any) => {
-        log.info("Shutting down...");
-
-        // Print stack trace if necessary
-        if (error != null && error.stack != null) {
-            log.error(`CRITICAL: ${error.stack}`);
-        }
-        ClusterManager.DestroyWorker();
-    };
-    worker.on("exit", shutdownHandler.bind(null))
-        .on("uncaughtException", shutdownHandler.bind(null))
-        .on("SIGINT", shutdownHandler.bind(null));
-
 	// Execute entrypoint
     main();
 }
