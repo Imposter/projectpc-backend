@@ -11,7 +11,7 @@ export default async function AuthChecker(action: Action, roles: any[]): Promise
 
     // Check if session exists
     var session = <Session><any>request.session;
-    if (session != null || !session.authorized) {
+    if (session != null && session.authorized) {
         // Check role
         if (!roles.length)
             return true;

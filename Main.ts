@@ -1,6 +1,7 @@
 ﻿import { IConfig } from "./IConfig";
 import ClusterManager from "./Utility/ClusterManager";
 import AuthChecker from "./Core/AuthChecker";
+import "reflect-metadata";
 import * as rc from "routing-controllers";
 import * as mongoose from "mongoose";
 import * as log4js from "log4js";
@@ -8,11 +9,11 @@ import * as fs from "fs";
 import * as http from "http";
 import * as https from "https";
 import * as express from "express";
-import session from "express-session";
-import MongoDBStore from "connect-mongodb-session";
-import v4 from "uuid/v4";
 const config: IConfig = require("./config.json");
 const mongoSanitize = require("express-mongo-sanitize");
+const session = require("express-session");
+const MongoDBStore = require("connect-mongodb-session")(session);
+const v4 = require("uuid/v4");
 
 // Initialize logger
 log4js.configure(config.log);
@@ -60,9 +61,11 @@ async function main() {
 
 	// Apply routing config to express app
 	rc.useExpressServer(app, {
-		controllers: [ `${__dirname}/Controllers/*.js` ],
+		controllers: [ `${__dirname}/Controllers/**/*.js` ],
+		middlewares: [ `${__dirname}/Middlewares/**/*.js` ],
 		routePrefix: "/api",
 		authorizationChecker: AuthChecker,
+		defaultErrorHandler: false
 	});
 
 	// Trust proxy if behind one
@@ -71,10 +74,11 @@ async function main() {
 	}
 
 	// Global middleware
-	app.use((error: Error, request: express.Request, response: express.Response, next: any) => {
+	app.use((error: Error, request: express.Request, response: express.Response, next: (error: any)) => {
 		log.error(`Express error: ${error.stack}`);
 		next(error);
 	});
+	app.use(mongoSanitize());
 	app.use(session({
 		genid: () => v4(),
 		secret: config.sessionSecret,
@@ -87,9 +91,12 @@ async function main() {
 		store: new MongoDBStore({
 			uri: connectionString,
 			collection: "sessions"
+		}, (error) => {
+			if (error != null) {
+				log.error(`MongoDBStore error: ${error.stack}`);
+			}
 		})
 	}));
-	app.use(mongoSanitize());
 
 	// Start listening on port
 	server.listen(config.port);
