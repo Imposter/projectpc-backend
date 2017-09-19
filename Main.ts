@@ -9,11 +9,16 @@ import * as fs from "fs";
 import * as http from "http";
 import * as https from "https";
 import * as express from "express";
-const config: IConfig = require("./config.json");
 const mongoSanitize = require("express-mongo-sanitize");
 const session = require("express-session");
-const MongoDBStore = require("connect-mongodb-session")(session);
+const MongoStore = require("connect-mongo")(session);
 const v4 = require("uuid/v4");
+
+// Get environment
+var environment = process.env.NODE_ENV || "dev";
+
+// Load config
+const config: IConfig = require(`./config-${environment}.json`);
 
 // Initialize logger
 log4js.configure(config.log);
@@ -59,22 +64,13 @@ async function main() {
 		}, this.app);
 	}
 
-	// Apply routing config to express app
-	rc.useExpressServer(app, {
-		controllers: [ `${__dirname}/Controllers/**/*.js` ],
-		middlewares: [ `${__dirname}/Middlewares/**/*.js` ],
-		routePrefix: "/api",
-		authorizationChecker: AuthChecker,
-		defaultErrorHandler: false
-	});
-
 	// Trust proxy if behind one
 	if (config.behindProxy) {
 		app.set("trust proxy", 1);
 	}
 
 	// Global middleware
-	app.use((error: Error, request: express.Request, response: express.Response, next: (error: any)) => {
+	app.use((error: Error, request: express.Request, response: express.Response, next: (error: any) => any) => {
 		log.error(`Express error: ${error.stack}`);
 		next(error);
 	});
@@ -83,20 +79,34 @@ async function main() {
 		genid: () => v4(),
 		secret: config.sessionSecret,
 		resave: false,
-		saveUninitialized: true,
+		unset: "destroy",
+		saveUninitialized: false,
+		name: "session_id",
 		cookie: { 
 			secure: config.secure || config.behindProxy,
 			maxAge: config.sessionTimeout
 		},
-		store: new MongoDBStore({
-			uri: connectionString,
+		store: new MongoStore({
+			mongooseConnection: mongoose.connection,
 			collection: "sessions"
-		}, (error) => {
-			if (error != null) {
-				log.error(`MongoDBStore error: ${error.stack}`);
-			}
 		})
 	}));
+		
+	// Apply routing config to express app
+	rc.useExpressServer(app, {
+		controllers: [ `${__dirname}/Controllers/**/*.js` ],
+		middlewares: [ `${__dirname}/Middlewares/**/*.js` ],
+		routePrefix: "/api",
+		authorizationChecker: AuthChecker,
+		defaultErrorHandler: true, // TODO: Test if this works on 404's
+		development: environment === "dev", // TODO: Implement this in ErrorHandler.ts
+		defaults: {
+			paramOptions: {
+				// Require request parameters
+				required: true
+			}	
+		}
+	});
 
 	// Start listening on port
 	server.listen(config.port);

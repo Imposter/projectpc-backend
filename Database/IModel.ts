@@ -1,6 +1,6 @@
-import * as mongoose from "mongoose";
+import { Document } from "mongoose";
 
-export default interface IModel extends mongoose.Document {
+export default interface IModel extends Document {
     createdAt: Date,
     updatedAt: Date
 }

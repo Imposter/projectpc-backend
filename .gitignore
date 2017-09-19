@@ -1,5 +1,7 @@
 # Project
 config.json
+config-dev.json
+config-prod.json
 *.log
 
 # Javascript

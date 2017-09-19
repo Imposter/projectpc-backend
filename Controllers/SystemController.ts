@@ -6,10 +6,4 @@ export default class SystemController {
     version() {
         throw new InternalServerError("Not implemented");
     }
-
-    @Authorized()
-    @Get("/authTest")
-    authTest() {
-        return "Hello!";
-    }
 }

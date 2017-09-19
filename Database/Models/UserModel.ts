@@ -1,7 +1,7 @@
-import RoleType from "../Core/RoleType";
-import IModel from "../Database/IModel";
-import Schema from "../Database/Schema";
-import * as mongoose from "mongoose";
+import RoleType from "../../Core/RoleType";
+import IModel from "../../Database/IModel";
+import Schema from "../../Database/Schema";
+import { Document, Model, model } from "mongoose";
 
 export default interface IUser {
     name?: string;
@@ -15,7 +15,7 @@ export default interface IUser {
     lastName?: string;
 }
 
-export interface IUserModel extends IUser, mongoose.Document {
+export interface IUserModel extends IUser, Document {
     // ...
 }
 
@@ -31,4 +31,4 @@ export const UserSchema: Schema = new Schema({
     lastName: String
 });
 
-export const Users: mongoose.Model<IUserModel> = mongoose.model<IUserModel>("User", UserSchema);
+export const Users: Model<IUserModel> = model<IUserModel>("User", UserSchema);
