@@ -1,11 +1,11 @@
 import ResultCode from "./ResultCode";
 
 export default class Result {
-    private result: ResultCode;
+    private code: ResultCode;
     private data: any;
 
-    constructor(result: ResultCode, data?: any) {
-        this.result = result;
+    constructor(code: ResultCode, data?: any) {
+        this.code = code;
         this.data = data;
     }
 }

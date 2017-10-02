@@ -84,7 +84,7 @@ async function main() {
 		name: "session_id",
 		cookie: { 
 			secure: config.secure || config.behindProxy,
-			maxAge: config.sessionTimeout
+			maxAge: config.sessionTimeout // Standard: 86400000
 		},
 		store: new MongoStore({
 			mongooseConnection: mongoose.connection,
@@ -98,7 +98,7 @@ async function main() {
 		middlewares: [ `${__dirname}/Middlewares/**/*.js` ],
 		routePrefix: "/api",
 		authorizationChecker: AuthChecker,
-		defaultErrorHandler: true, // TODO: Test if this works on 404's
+		defaultErrorHandler: false,
 		development: environment === "dev", // TODO: Implement this in ErrorHandler.ts
 		defaults: {
 			paramOptions: {

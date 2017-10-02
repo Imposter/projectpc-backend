@@ -11,6 +11,9 @@ export class CustomErrorHandler implements ExpressErrorMiddlewareInterface {
             statusCode = error.code;
         }
 
+        // TODO: If error.message is empty, and statusCode is an http code
+        // then get the http message string
+
         // Send response
         response.status(httpCode).send(JSON.stringify({
             code: statusCode,

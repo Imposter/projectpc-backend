@@ -10,16 +10,19 @@ import { Request } from "express";
 @JsonController("/auth")
 export default class AuthController {
     @Post("/create")
-    create(@Session() session: any, 
-        @BodyParam("name") userName: string, 
-        @BodyParam("password") password: string, 
-        @BodyParam("hashType") hashType: string) {           
+    create(@Session() session: any,
+        @BodyParam("token") token: string, 
+        @BodyParam("method") method: string) {           
         // Check if session data exists (return previous session)
         if (session.data) {
             return new Result(ResultCode.Ok, session.data); // testing
         }
 
+        // TODO: Check if session data exists within database, if it does, remove previous session
+
+
         // TODO: Authenticate
+
 
         // Create session data
         session.data = <SessionData> {
@@ -29,12 +32,6 @@ export default class AuthController {
         };
 
         return new Result(ResultCode.Ok, session.data); // testing
-    }
-    
-    @Authorized()
-    @Get("/authTest")
-    authTest() {
-        return "Hello!";
     }
 
     @Post("/oauth")
