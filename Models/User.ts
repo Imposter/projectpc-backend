@@ -1,14 +1,17 @@
-import RoleType from "../../Core/RoleType";
-import IModel from "../../Database/IModel";
-import Schema from "../../Database/Schema";
+import IModel from "./IModel";
+import Schema from "./Schema";
 import { Document, Model, model } from "mongoose";
 
-export default interface IUser {
+export enum RoleType {
+    Admin = 0,
+    Moderator = 1,
+    User = 2
+}
+
+export interface IUser {
     name?: string;
-    email?: string;
-    password: string,
-    hash: string,
-    hashFormat: string,
+    email: string;
+    passwordHash: number,
     role: RoleType,
     
     firstName?: string;
@@ -22,10 +25,8 @@ export interface IUserModel extends IUser, Document {
 export const UserSchema: Schema = new Schema({
     name: { type: String, unique: true },
     email: { type: String, unique: true },
-    password: String,
-    hash: String,
-    hashFormat: String,
-    roleType: Number,
+    passwordHash: Number,
+    role: Number,
 
     firstName: String,
     lastName: String

@@ -1,1 +1,0 @@
-// TODO: Make a model side on the client too

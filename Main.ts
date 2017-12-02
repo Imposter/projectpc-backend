@@ -9,6 +9,7 @@ import * as fs from "fs";
 import * as http from "http";
 import * as https from "https";
 import * as express from "express";
+const bodyParser = require("body-parser");
 const mongoSanitize = require("express-mongo-sanitize");
 const session = require("express-session");
 const MongoStore = require("connect-mongo")(session);
@@ -69,6 +70,20 @@ async function main() {
 		app.set("trust proxy", 1);
 	}
 
+	// Modify body-parser to avoid limits (Phew, this is ugly)
+	let bodyParserJson = bodyParser.json;
+	Object.defineProperty(bodyParser, 'json', {
+		configurable: true,
+		enumerable: true,
+		get: function() {
+			return function(options) {
+				if (options == null) options = {};
+				options.limit = "50mb";
+				return bodyParserJson(options);
+			};
+		}
+	});
+
 	// Global middleware
 	app.use((error: Error, request: express.Request, response: express.Response, next: (error: any) => any) => {
 		log.error(`Express error: ${error.stack}`);
@@ -99,11 +114,11 @@ async function main() {
 		routePrefix: "/api",
 		authorizationChecker: AuthChecker,
 		defaultErrorHandler: false,
-		development: environment === "dev", // TODO: Implement this in ErrorHandler.ts
+		development: environment === "dev",
 		defaults: {
 			paramOptions: {
 				// Require request parameters
-				required: true
+				required: true // TODO: Empty parameter is reaching server or something...
 			}	
 		}
 	});

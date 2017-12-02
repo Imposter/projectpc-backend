@@ -1,47 +1,88 @@
-import RoleType from "../Core/RoleType";
 import Result from "../Core/Result";
 import ResultCode from "../Core/ResultCode";
 import ResultError from "../Core/ResultError";
-import SessionData from "../Core/SessionData";
-import { Users } from "../Database/Models/UserModel";
-import { Controller, JsonController, Get, Post, Authorized, Req, Session, BodyParam, InternalServerError, BadRequestError, HttpError } from "routing-controllers";
+import SessionData from "../Models/SessionData";
+import AuthResult from "../Models/Results/AuthResult";
+import { RoleType, Users, IUserModel } from "../Models/User";
+import { JsonController, Get, Post, Delete, Authorized, Req, Session, BodyParam, InternalServerError, BadRequestError, HttpError } from "routing-controllers";
 import { Request } from "express";
 
 @JsonController("/auth")
 export default class AuthController {
     @Post("/create")
-    create(@Session() session: any,
-        @BodyParam("token") token: string, 
-        @BodyParam("method") method: string) {           
-        // Check if session data exists (return previous session)
+    async create(@Session() session: any,
+        @BodyParam("email") email: string, 
+        @BodyParam("firstName") firstName: string, 
+        @BodyParam("lastName") lastName: string,
+        @BodyParam("userName") userName: string, 
+        @BodyParam("passwordHash") passwordHash: number) {
+        // Check if a session already exists (return failure)
         if (session.data) {
-            return new Result(ResultCode.Ok, session.data); // testing
+            return new Result(ResultCode.AlreadyAuthenticated, <AuthResult>session.data);
         }
 
-        // TODO: Check if session data exists within database, if it does, remove previous session
+        // Check if an account already exists with either the username or email supplied
+        var user = await Users.findOne({
+            $or: [ { name: userName }, { email: email } ]
+        });
 
+        if (user) {
+            return new Result(ResultCode.UserAlreadyExists);
+        }
 
-        // TODO: Authenticate
+        // Create user and store in database
+        user = await Users.create(<IUserModel> {
+            name: userName,
+            passwordHash: passwordHash,
+            email: email,
+            firstName: firstName,
+            lastName: lastName,
+            role: RoleType.User
+        });
 
-
-        // Create session data
+        // Create session
         session.data = <SessionData> {
             authorized: true,
-            userId: "empty",
+            userId: user._id.toString(),
             role: RoleType.User
         };
 
-        return new Result(ResultCode.Ok, session.data); // testing
+        return new Result(ResultCode.Ok, <AuthResult>session.data);
     }
 
-    @Post("/oauth")
-    oauth() {
-        throw new ResultError(ResultCode.NotImplemented);
-    }
+	@Post("/login")
+	async login(@Session() session: any,
+        @BodyParam("email") email: string, 
+        @BodyParam("passwordHash") passwordHash: number) {
+        // Check if session data exists (return previous session)
+        if (session.data) {
+            return new Result(ResultCode.Ok, <AuthResult>session.data);
+        }
+
+        // Authenticate
+		var user = await Users.findOne({
+            email: email,
+            passwordHash: passwordHash
+        });
+        
+        if (user) {
+            // Create session data
+            session.data = <SessionData> {
+                authorized: true,
+                userId: user._id.toString(),
+                role: user.role
+            };
+
+            return new Result(ResultCode.Ok, <AuthResult>session.data);
+        } else {
+            return new Result(ResultCode.InvalidCredentials);
+        }
+	}
 
     @Authorized()
-    @Get("/end")
-    end() {
-        // TODO: ...
+    @Delete("/delete")
+    delete(@Session() session: any) {
+		session.data = null;
+		return new Result(ResultCode.Ok);
     }
 }

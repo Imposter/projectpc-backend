@@ -1,5 +1,5 @@
 import { Action } from "routing-controllers";
-import SessionData from "./SessionData";
+import SessionData from "../Models/SessionData";
 import { Request } from "express";
 import { Logger, getLogger } from "log4js";
 

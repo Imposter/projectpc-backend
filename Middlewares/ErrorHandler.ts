@@ -9,15 +9,14 @@ export class CustomErrorHandler implements ExpressErrorMiddlewareInterface {
         var statusCode = httpCode;
         if (error.code != null) {
             statusCode = error.code;
+        } else {
+            error.message = HttpStatus.getStatusText(httpCode);
         }
-
-        // TODO: If error.message is empty, and statusCode is an http code
-        // then get the http message string
 
         // Send response
         response.status(httpCode).send(JSON.stringify({
             code: statusCode,
-            error: error.message,
+            error: error.message
         }));
     }
 }
