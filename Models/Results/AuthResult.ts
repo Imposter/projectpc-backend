@@ -1,4 +1,4 @@
-import RoleType from "../../Core/RoleType";
+import { RoleType } from "../../Models/User";
 
 export default interface AuthResult {
     authorized: boolean;
