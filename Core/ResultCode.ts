@@ -2,14 +2,14 @@ enum Result {
     Ok = 1000,
     InternalError = 1001,
     
-    InvalidCredentials = 1100,
-    AlreadyAuthenticated = 1101,
-    UserAlreadyExists = 1102,
+    InvalidUserId = 1100,
+    InvalidCredentials = 1101,
+    AlreadyAuthenticated = 1102,
+    UserAlreadyExists = 1103,
 
     InvalidPostId = 1200,
     InvalidImageId = 1201,
-    InvalidImageIndex = 1202,
-    ImageLimitReached = 1203,
+    ImageLimitReached = 1202,
 
     NotImplemented = 9999,
 }

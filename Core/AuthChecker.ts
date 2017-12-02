@@ -1,5 +1,5 @@
 import { Action } from "routing-controllers";
-import SessionData from "../Models/SessionData";
+import { ISession } from "../Models/Session";
 import { Request } from "express";
 import { Logger, getLogger } from "log4js";
 
@@ -10,7 +10,7 @@ export default async function AuthChecker(action: Action, roles: any[]): Promise
     var token = request.headers["authorization"];
 
     // Check if session exists
-    var session = <SessionData><any>request.session.data;
+    var session = (<ISession><any>request.session).data;
     if (session != null && session.authorized) {
         // Check role
         if (!roles.length)

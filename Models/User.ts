@@ -8,7 +8,7 @@ export enum RoleType {
     User = 2
 }
 
-export interface IUser {
+export interface IUser extends Document {
     name?: string;
     email: string;
     passwordHash: number,
@@ -16,10 +16,6 @@ export interface IUser {
     
     firstName?: string;
     lastName?: string;
-}
-
-export interface IUserModel extends IUser, Document {
-    // ...
 }
 
 export const UserSchema: Schema = new Schema({
@@ -32,4 +28,4 @@ export const UserSchema: Schema = new Schema({
     lastName: String
 });
 
-export const Users: Model<IUserModel> = model<IUserModel>("User", UserSchema);
+export const Users: Model<IUser> = model<IUser>("User", UserSchema);

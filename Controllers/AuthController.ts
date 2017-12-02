@@ -1,16 +1,16 @@
 import Result from "../Core/Result";
 import ResultCode from "../Core/ResultCode";
 import ResultError from "../Core/ResultError";
-import SessionData from "../Models/SessionData";
+import { ISession } from "../Models/Session";
 import AuthResult from "../Models/Results/AuthResult";
-import { RoleType, Users, IUserModel } from "../Models/User";
+import { RoleType, Users, IUser } from "../Models/User";
 import { JsonController, Get, Post, Delete, Authorized, Req, Session, BodyParam, InternalServerError, BadRequestError, HttpError } from "routing-controllers";
 import { Request } from "express";
 
 @JsonController("/auth")
 export default class AuthController {
     @Post("/create")
-    async create(@Session() session: any,
+    async create(@Session() session: ISession,
         @BodyParam("email") email: string, 
         @BodyParam("firstName") firstName: string, 
         @BodyParam("lastName") lastName: string,
@@ -31,7 +31,7 @@ export default class AuthController {
         }
 
         // Create user and store in database
-        user = await Users.create(<IUserModel> {
+        user = await Users.create(<IUser> {
             name: userName,
             passwordHash: passwordHash,
             email: email,
@@ -41,7 +41,7 @@ export default class AuthController {
         });
 
         // Create session
-        session.data = <SessionData> {
+        session.data = {
             authorized: true,
             userId: user._id.toString(),
             role: RoleType.User
@@ -51,7 +51,7 @@ export default class AuthController {
     }
 
 	@Post("/login")
-	async login(@Session() session: any,
+	async login(@Session() session: ISession,
         @BodyParam("email") email: string, 
         @BodyParam("passwordHash") passwordHash: number) {
         // Check if session data exists (return previous session)
@@ -67,7 +67,7 @@ export default class AuthController {
         
         if (user) {
             // Create session data
-            session.data = <SessionData> {
+            session.data = {
                 authorized: true,
                 userId: user._id.toString(),
                 role: user.role
@@ -81,7 +81,7 @@ export default class AuthController {
 
     @Authorized()
     @Delete("/delete")
-    delete(@Session() session: any) {
+    delete(@Session() session: ISession) {
 		session.data = null;
 		return new Result(ResultCode.Ok);
     }

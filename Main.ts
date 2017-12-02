@@ -70,7 +70,7 @@ async function main() {
 		app.set("trust proxy", 1);
 	}
 
-	// Modify body-parser to avoid limits (Phew, this is ugly)
+	// Hook body-parser to avoid body size limits, set cap to 50MB
 	let bodyParserJson = bodyParser.json;
 	Object.defineProperty(bodyParser, 'json', {
 		configurable: true,
@@ -118,7 +118,7 @@ async function main() {
 		defaults: {
 			paramOptions: {
 				// Require request parameters
-				required: true // TODO: Empty parameter is reaching server or something...
+				required: true
 			}	
 		}
 	});

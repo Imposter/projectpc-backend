@@ -2,10 +2,10 @@ import Result from "../Core/Result";
 import ResultCode from "../Core/ResultCode";
 import ResultError from "../Core/ResultError";
 import BasicIdResult from "../Models/Results/BasicIdResult";
-import SessionData from "../Models/SessionData";
+import { ISession } from "../Models/Session";
 import DownloadImageResult from "../Models/Results/DownloadImageResult";
-import { PostStatus, Posts, IPostModel } from "../Models/Post";
-import { Images, IImageModel } from "../Models/Image";
+import { PostStatus, Posts, IPost } from "../Models/Post";
+import { Images, IImage } from "../Models/Image";
 import { JsonController, Get, Post, Delete, Authorized, Req, Session, BodyParam, InternalServerError, BadRequestError, HttpError } from "routing-controllers";
 const sharp = require("sharp");
 
@@ -16,7 +16,7 @@ export default class PostController {
 
     @Authorized()
     @Post("/create")
-    async create(@Session() session: any,
+    async create(@Session() session: ISession,
         @BodyParam("title") title: string, 
         @BodyParam("category") category: string,
         @BodyParam("tags", { required: false }) tags: string[], 
@@ -24,7 +24,7 @@ export default class PostController {
         @BodyParam("currency") currency: string,
         @BodyParam("body") body: string) {
         // Create post
-        var post = await Posts.create(<IPostModel> {
+        var post = await Posts.create(<IPost> {
             authorId: session.data.userId,
             status: PostStatus.Unlisted,
             title: title,
@@ -34,7 +34,7 @@ export default class PostController {
             currency: currency,
             imageIds: [],
             thumbnailId: null,
-            thumbnailIndex: -1,
+            thumbnailImageId: null,
             body: body
         });
 
@@ -45,7 +45,7 @@ export default class PostController {
 
     @Authorized()
     @Post("/uploadImage")
-    async uploadImage(@Session() session: any,
+    async uploadImage(@Session() session: ISession,
         @BodyParam("postId") postId: string,
         @BodyParam("thumbnail") thumbnail: boolean,
         @BodyParam("imageData") imageData: string) {
@@ -61,13 +61,13 @@ export default class PostController {
         }
 
         // Insert image
-        var image = await Images.create(<IImageModel> {
+        var image = await Images.create(<IImage> {
             postId: post._id.toString(),
             imageData: imageData
         });
 
         // Update post with new image id
-        var index = post.imageIds.push(image._id.toString()) - 1;
+        post.imageIds.push(image._id.toString()) - 1;
 
         // Do we have to generate a thumbnail?
         if (thumbnail) {
@@ -86,14 +86,14 @@ export default class PostController {
             var thumbnailData = rawThumbnailData.toString("base64");
 
             // Insert thumbnail into database
-            var thumbnailImage = await Images.create(<IImageModel> {
+            var thumbnailImage = await Images.create(<IImage> {
                 postId: post._id.toString(),
                 imageData: thumbnailData
             });
 
             // Update post with thumbnail id and index
             post.thumbnailId = thumbnailImage._id.toString();
-            post.thumbnailIndex = index;
+            post.thumbnailImageId = image._id.toString();
         }
         
         // Update post
@@ -107,34 +107,35 @@ export default class PostController {
 
     @Authorized()
     @Delete("/removeImage")
-    async removeImage(@Session() session: any,
+    async removeImage(@Session() session: ISession,
         @BodyParam("postId") postId: string,
-        @BodyParam("index") index: number) {
+        @BodyParam("imageId") imageId: string) {
         // Check if post id is valid
         var post = await Posts.findById(postId);
         if (post == null) {
             return new Result(ResultCode.InvalidPostId);
         }
 
-        // Check if index is valid
-        if (index >= post.imageIds.length) {
-            return new Result(ResultCode.InvalidImageIndex);
+        // Get image index
+        var index = post.imageIds.indexOf(imageId);
+        if (index < 0) {
+            return new Result(ResultCode.InvalidImageId);
         }
 
         // Remove image
-        var image = await Images.findOneAndRemove(post.imageIds[index]);
+        var image = await Images.findOneAndRemove(imageId);
         post.imageIds = post.imageIds.splice(index, 1);
 
         // Remove thumbnail
-        if (index == post.thumbnailIndex) {
+        if (post.thumbnailImageId == imageId) {
             await Images.findByIdAndRemove(post.thumbnailId);
 
             post.thumbnailId = null;
-            post.thumbnailIndex = post.imageIds.length == 0 ? -1 : 0;
+            post.thumbnailImageId = post.imageIds.length == 0 ? null : post.imageIds[0];
         }
 
-        //  If any available image, set as thumbnail
-        if (post.thumbnailIndex == 0 && post.thumbnailId == null) {
+        // If any available image, set as thumbnail
+        if (post.thumbnailId == null) {
             // Find first image
             var firstImage = await Images.findById(post.imageIds[0]);
             var imageData = firstImage.imageData;
@@ -149,14 +150,14 @@ export default class PostController {
             var thumbnailData = rawThumbnailData.toString("base64");
 
             // Insert thumbnail into database
-            var thumbnailImage = await Images.create(<IImageModel> {
+            var thumbnailImage = await Images.create(<IImage> {
                 postId: post._id.toString(),
                 imageData: thumbnailData
             });
 
             // Update post with thumbnail id and index
             post.thumbnailId = thumbnailImage._id.toString();
-            post.thumbnailIndex = 0;
+            post.thumbnailImageId = post.imageIds[0];
         }
         
         // Update post
@@ -170,22 +171,23 @@ export default class PostController {
 
     @Authorized()
     @Post("/setThumbnailImage")
-    async setThumbnailImage(@Session() session: any,
+    async setThumbnailImage(@Session() session: ISession,
         @BodyParam("postId") postId: string,
-        @BodyParam("index") index: number) {
+        @BodyParam("imageId") imageId: string) {
         // Check if post id is valid
         var post = await Posts.findById(postId);
         if (post == null) {
             return new Result(ResultCode.InvalidPostId);
         }
-
-        // Check if image index is valid
-        if (index >= post.imageIds.length) {
-            return new Result(ResultCode.InvalidImageIndex);
+        
+        // Get image index
+        var index = post.imageIds.indexOf(imageId);
+        if (index < 0) {
+            return new Result(ResultCode.InvalidImageId);
         }
 
         // Find image and get image data
-        var image = await Images.findById(post.imageIds[index]);
+        var image = await Images.findById(imageId);
         if (image == null) {
             return new Result(ResultCode.InternalError);
         }
@@ -205,14 +207,14 @@ export default class PostController {
         var thumbnailData = rawThumbnailData.toString("base64");
 
         // Insert thumbnail into database
-        var thumbnail = await Images.create(<IImageModel> {
+        var thumbnail = await Images.create(<IImage> {
             postId: post._id.toString(),
             imageData: thumbnailData
         });
 
         // Update post with thumbnail id
         post.thumbnailId = thumbnail._id.toString();
-        post.thumbnailIndex = index;
+        post.thumbnailImageId = imageId;
         
         // Update post
         await post.save();
@@ -225,10 +227,10 @@ export default class PostController {
 
     @Authorized()
     @Post("/setListed")
-    async setListed(@Session() session: any,
+    async setListed(@Session() session: ISession,
         @BodyParam("postId") postId: string) {
         var post = await Posts.findById(postId);
-        if (post == null || post.authorId != (<SessionData>session.data).userId) {
+        if (post == null || post.authorId != session.data.userId) {
             return new Result(ResultCode.InvalidPostId);
         }
 
@@ -244,7 +246,7 @@ export default class PostController {
     
     @Authorized()
     @Post("/update")
-    async update(@Session() session: any,
+    async update(@Session() session: ISession,
         @BodyParam("postId") postId: string, 
         @BodyParam("title", { required: false }) title: string, 
         @BodyParam("category", { required: false }) category: string,
@@ -275,7 +277,7 @@ export default class PostController {
 
     @Authorized()
     @Post("/downloadImage")
-    async downloadImage(@Session() session: any,
+    async downloadImage(@Session() session: ISession,
         @BodyParam("imageId") imageId: string) {
         // Find image and get image data
         var image = await Images.findById(imageId);

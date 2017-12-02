@@ -2,13 +2,9 @@ import IModel from "./IModel";
 import Schema from "./Schema";
 import { Document, Model, model } from "mongoose";
 
-export default interface IImage {
+export interface IImage extends Document {
     postId: string;
     imageData: string;
-}
-
-export interface IImageModel extends IImage, Document {
-    // ...
 }
 
 export const ImageSchema: Schema = new Schema({
@@ -16,4 +12,4 @@ export const ImageSchema: Schema = new Schema({
     imageData: String
 });
 
-export const Images: Model<IImageModel> = model<IImageModel>("Image", ImageSchema);
+export const Images: Model<IImage> = model<IImage>("Image", ImageSchema);

@@ -9,7 +9,7 @@ export enum PostStatus {
     Sold = 3,
 }
 
-export interface IPost {
+export interface IPost extends Document {
     authorId: string;
     status: PostStatus;
     title: string;
@@ -19,12 +19,8 @@ export interface IPost {
     currency: string;
     imageIds: string[];
     thumbnailId: string;
-    thumbnailIndex: number;
+    thumbnailImageId: string;
     body: string;
-}
-
-export interface IPostModel extends IPost, Document {
-    // ...
 }
 
 export const PostSchema: Schema = new Schema({
@@ -37,8 +33,8 @@ export const PostSchema: Schema = new Schema({
     currency: String,
     imageIds: [ String ],
     thumbnailId: String,
-    thumbnailIndex: Number,
+    thumbnailImageId: String,
     body: String
 });
 
-export const Posts: Model<IPostModel> = model<IPostModel>("Post", PostSchema);
+export const Posts: Model<IPost> = model<IPost>("Post", PostSchema);
