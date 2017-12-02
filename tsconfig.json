@@ -2,8 +2,9 @@
     "compilerOptions": {
         "target": "es2015",
         "module": "commonjs",
-        "sourceMap": true,
+        "sourceMap": false,
         "removeComments": true,
+        "outDir": "./build/",
         "allowSyntheticDefaultImports": true,
         "emitDecoratorMetadata": true,
         "experimentalDecorators": true

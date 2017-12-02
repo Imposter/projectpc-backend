@@ -4,6 +4,7 @@ config-dev.json
 config-prod.json
 NOTES.txt
 images/
+build/
 *.log
 
 # Javascript
