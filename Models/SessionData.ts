@@ -1,4 +1,4 @@
-import RoleType from "../Core/RoleType";
+import { RoleType } from "./User";
 
 export default interface SessionData {
     authorized: boolean;
