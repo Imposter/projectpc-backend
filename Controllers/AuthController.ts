@@ -45,6 +45,9 @@ export default class AuthController {
             authorized: true,
             userId: user._id.toString(),
             userName: userName,
+            firstName: firstName,
+            lastName: lastName,
+            email: email,
             role: RoleType.User
         };
 
@@ -72,6 +75,9 @@ export default class AuthController {
                 authorized: true,
                 userId: user._id.toString(),
                 userName: user.name,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                email: user.email,
                 role: user.role
             };
 

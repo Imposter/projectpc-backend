@@ -13,7 +13,10 @@ export interface SessionData {
     authorized: boolean;
     userId: string;
     userName: string;
-    role: RoleType;
+    firstName: string;
+    lastName: string;
+    email: string;
+    role: RoleType,
 }
 
 export interface ISession {

@@ -9,13 +9,13 @@ export enum RoleType {
 }
 
 export interface IUser extends Document {
-    name?: string;
+    name: string;
     email: string;
     passwordHash: number,
     role: RoleType,
     
-    firstName?: string;
-    lastName?: string;
+    firstName: string;
+    lastName: string;
 }
 
 export const UserSchema = SchemaHelper.Create({

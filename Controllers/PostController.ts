@@ -291,5 +291,5 @@ export default class PostController {
         });
     }
 
-    // TODO: Get Posts (for category, filter out sold/unlisted, etc.), return date posted too!
+    // TODO: Get Posts (for category - if category is empty-> get users posts, filter out sold/unlisted, etc.), return date posted too!
 }
