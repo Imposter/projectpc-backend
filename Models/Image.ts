@@ -1,5 +1,5 @@
 import IModel from "./IModel";
-import Schema from "./Schema";
+import SchemaHelper from "./SchemaHelper";
 import { Document, Model, model } from "mongoose";
 
 export interface IImage extends Document {
@@ -7,7 +7,7 @@ export interface IImage extends Document {
     imageData: string;
 }
 
-export const ImageSchema: Schema = new Schema({
+export const ImageSchema = SchemaHelper.Create({
     postId: String,
     imageData: String
 });

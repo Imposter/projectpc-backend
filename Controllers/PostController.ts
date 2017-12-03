@@ -290,4 +290,6 @@ export default class PostController {
             imageData: image.imageData
         });
     }
+
+    // TODO: Get Posts (for category, filter out sold/unlisted, etc.), return date posted too!
 }

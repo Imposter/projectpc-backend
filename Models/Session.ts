@@ -1,5 +1,5 @@
 import { RoleType } from "./User";
-import Schema from "./Schema";
+import SchemaHelper from "./SchemaHelper";
 import { Document, Model, model } from "mongoose";
 
 export interface SessionCookie {
@@ -12,6 +12,7 @@ export interface SessionCookie {
 export interface SessionData {
     authorized: boolean;
     userId: string;
+    userName: string;
     role: RoleType;
 }
 
@@ -26,7 +27,7 @@ export interface ISessionModel extends Document {
     expires: Date;
 }
 
-export const SessionSchema: Schema = new Schema({
+export const SessionSchema = SchemaHelper.Create({
     session: Object,
     expires: Date
 });

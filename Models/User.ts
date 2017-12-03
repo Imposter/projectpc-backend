@@ -1,5 +1,5 @@
 import IModel from "./IModel";
-import Schema from "./Schema";
+import SchemaHelper from "./SchemaHelper";
 import { Document, Model, model } from "mongoose";
 
 export enum RoleType {
@@ -18,7 +18,7 @@ export interface IUser extends Document {
     lastName?: string;
 }
 
-export const UserSchema: Schema = new Schema({
+export const UserSchema = SchemaHelper.Create({
     name: { type: String, unique: true },
     email: { type: String, unique: true },
     passwordHash: Number,

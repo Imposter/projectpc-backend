@@ -1,7 +1,7 @@
 import * as mongoose from "mongoose";
 
-export default class Schema extends mongoose.Schema {
-    constructor(schema: mongoose.SchemaDefinition) {
+export default class SchemaHelper {
+    public static Create(schema: mongoose.SchemaDefinition): mongoose.Schema {
         schema.createdAt = {
             type: Date,
             required: false
@@ -12,16 +12,17 @@ export default class Schema extends mongoose.Schema {
             required: false
         };
 
-        super(schema);
-
-        super.pre("save", function(next) {
+        var mgSchema = new mongoose.Schema(schema);
+        mgSchema.pre("save", function(next) {
             let now = new Date();
             if (!this.createdAt) {
                 this.createdAt = now;
             }
             this.updatedAt = now;
-
+        
             next();
         });
+
+        return mgSchema;
     }
 }

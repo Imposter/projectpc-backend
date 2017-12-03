@@ -5,7 +5,7 @@ import BasicIdResult from "../Models/Results/BasicIdResult";
 import GetMessagesResult from "../Models/Results/GetMessagesResult";
 import { ISession } from "../Models/Session";
 import { Messages, IMessage } from "../Models/Message";
-import { Posts, IPost } from "../Models/Post";
+import { PostStatus, Posts, IPost } from "../Models/Post";
 import { Users, IUser } from "../Models/User";
 import { JsonController, Get, Post, Delete, Authorized, Req, Session, BodyParam, InternalServerError, BadRequestError, HttpError } from "routing-controllers";
 import { Request } from "express";

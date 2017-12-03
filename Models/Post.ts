@@ -1,5 +1,5 @@
 import IModel from "./IModel";
-import Schema from "./Schema";
+import SchemaHelper from "./SchemaHelper";
 import { Document, Model, model } from "mongoose";
 
 export enum PostStatus {
@@ -23,7 +23,7 @@ export interface IPost extends Document {
     body: string;
 }
 
-export const PostSchema: Schema = new Schema({
+export const PostSchema = SchemaHelper.Create({
     authorId: String,
     status: Number,
     title: String,

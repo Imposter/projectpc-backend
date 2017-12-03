@@ -44,6 +44,7 @@ export default class AuthController {
         session.data = {
             authorized: true,
             userId: user._id.toString(),
+            userName: userName,
             role: RoleType.User
         };
 
@@ -70,6 +71,7 @@ export default class AuthController {
             session.data = {
                 authorized: true,
                 userId: user._id.toString(),
+                userName: user.name,
                 role: user.role
             };
 
