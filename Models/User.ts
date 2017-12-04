@@ -1,4 +1,3 @@
-import IModel from "./IModel";
 import SchemaHelper from "./SchemaHelper";
 import { Document, Model, model } from "mongoose";
 
