@@ -110,10 +110,10 @@ async function main() {
 	// Apply routing config to express app
 	rc.useExpressServer(app, {
 		controllers: [ `${__dirname}/Controllers/**/*.js` ],
-		middlewares: [ `${__dirname}/Middlewares/**/*.js` ],
+//		middlewares: [ `${__dirname}/Middlewares/**/*.js` ],
 		routePrefix: "/api",
 		authorizationChecker: AuthChecker,
-		defaultErrorHandler: false,
+//		defaultErrorHandler: false,
 		development: environment === "dev",
 		defaults: {
 			paramOptions: {

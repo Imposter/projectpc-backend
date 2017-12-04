@@ -23,12 +23,14 @@ export default class SchemaHelper {
             next();
         });
 
-        // TODO: Debug
-        (<any>mgSchema).toJSON = function() {
-            console.log("Serialized!");
-            this.id = this._id.toString();
-            return this;
-        }
+        // Transform
+        mgSchema.set("toJSON", {
+            transform: function (doc, ret, options) {
+                ret.id = ret._id.toString();
+                delete ret._id;
+                delete ret.__v;
+            }
+        });
 
         return mgSchema;
     }

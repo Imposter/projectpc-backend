@@ -329,20 +329,19 @@ export default class PostController {
     @Authorized()
     @Post("/getAllPostsForCategory")
     async getAllPostsForCategory(@BodyParam("category") category: string) {
-        // ...
         // Get all posts for category
-        var posts = await Posts.find({ category: category }).lean();
-        return posts;
+        var posts = await Posts.find({ category: category }); // TODO: Restrict unlisted and stuff
+        return new Result(ResultCode.Ok, posts, true);
     }
 
-    /*@Authorized()
+    @Authorized()
     @Post("/getPostsForCategory")
     async getPostsForCategory(@BodyParam("category") category: string,
         @BodyParam("start") start: number,
         @BodyParam("count") count: number) {
         // Get all posts for category
-        var posts = await Posts.find({ category: category }).skip(start).limit(count).lean();
-        return posts;
+        var posts = await Posts.find({ category: category }).skip(start).limit(count)
+        return new Result(ResultCode.Ok, posts, true);
     }
     
     @Authorized()
@@ -351,7 +350,7 @@ export default class PostController {
         @BodyParam("start", { required: false }) start: number,
         @BodyParam("count", { required: false }) count: number) {
         // ...
-    }*/
+    }
 
     // TODO: Get Posts (for category - if category is empty-> get users posts, filter out sold/unlisted, etc.), return date posted too!
 }
