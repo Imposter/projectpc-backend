@@ -45,7 +45,7 @@ export default class MessageController {
 
     @Authorized()
     @Post("/getMessagesForPost")
-    async getMessages(@Session() session: ISession,
+    async getMessagesForPost(@Session() session: ISession,
         @BodyParam("postId") postId: string) {
         // Check if post exists
         var post = await Posts.findById(postId);
@@ -66,14 +66,16 @@ export default class MessageController {
 
     @Authorized()
     @Post("/getAllMessages")
-    async getPosts(@Session() session: ISession) {
+    async getAllMessages(@Session() session: ISession) {
         // Get all messages which refer to user
         var messages = await Messages.find({
             $or: [ { senderId: session.data.userId }, { targetId: session.data.userId } ]
-        });
+        }).lean();
         
         return new Result(ResultCode.Ok, <GetMessagesResult> {
             messages: messages
         });
     }
+
+    // TODO: Add getMessagesSince method, which the app will use to send requests periodically to get new messages
 }

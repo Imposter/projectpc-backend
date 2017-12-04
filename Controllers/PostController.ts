@@ -3,6 +3,7 @@ import ResultCode from "../Core/ResultCode";
 import ResultError from "../Core/ResultError";
 import BasicIdResult from "../Models/Results/BasicIdResult";
 import { ISession } from "../Models/Session";
+import { RoleType } from "../Models/User";
 import DownloadImageResult from "../Models/Results/DownloadImageResult";
 import { PostStatus, Posts, IPost } from "../Models/Post";
 import { Images, IImage } from "../Models/Image";
@@ -53,6 +54,13 @@ export default class PostController {
         var post = await Posts.findById(postId);
         if (post == null) {
             return new Result(ResultCode.InvalidPostId);
+        }
+        
+        // Check if user created the post or is an admin
+        if (post.authorId != session.data.userId
+            ||session.data.role != RoleType.Moderator.valueOf()
+            || session.data.role != RoleType.Admin.valueOf()) {
+            return new Result(ResultCode.Unauthorized);
         }
 
         // Check if upload limit reached
@@ -114,6 +122,13 @@ export default class PostController {
         var post = await Posts.findById(postId);
         if (post == null) {
             return new Result(ResultCode.InvalidPostId);
+        }
+        
+        // Check if user created the post or is an admin
+        if (post.authorId != session.data.userId
+            ||session.data.role != RoleType.Moderator.valueOf()
+            || session.data.role != RoleType.Admin.valueOf()) {
+            return new Result(ResultCode.Unauthorized);
         }
 
         // Get image index
@@ -180,6 +195,13 @@ export default class PostController {
             return new Result(ResultCode.InvalidPostId);
         }
         
+        // Check if user created the post or is an admin
+        if (post.authorId != session.data.userId
+            ||session.data.role != RoleType.Moderator.valueOf()
+            || session.data.role != RoleType.Admin.valueOf()) {
+            return new Result(ResultCode.Unauthorized);
+        }
+        
         // Get image index
         var index = post.imageIds.indexOf(imageId);
         if (index < 0) {
@@ -233,6 +255,13 @@ export default class PostController {
         if (post == null || post.authorId != session.data.userId) {
             return new Result(ResultCode.InvalidPostId);
         }
+        
+        // Check if user created the post or is an admin
+        if (post.authorId != session.data.userId
+            ||session.data.role != RoleType.Moderator.valueOf()
+            || session.data.role != RoleType.Admin.valueOf()) {
+            return new Result(ResultCode.Unauthorized);
+        }
 
         // Update post
         post.status = PostStatus.Listed;
@@ -260,6 +289,13 @@ export default class PostController {
             return new Result(ResultCode.InvalidPostId);
         }
 
+        // Check if user created the post or is an admin
+        if (post.authorId != session.data.userId
+            ||session.data.role != RoleType.Moderator.valueOf()
+            || session.data.role != RoleType.Admin.valueOf()) {
+            return new Result(ResultCode.Unauthorized);
+        }
+
         // Update post
         if (title != null) post.title = title;
         if (category != null) post.category = category; // NOTE: We probably shouldn't allow modification of this, but oh well
@@ -277,8 +313,7 @@ export default class PostController {
 
     @Authorized()
     @Post("/downloadImage")
-    async downloadImage(@Session() session: ISession,
-        @BodyParam("imageId") imageId: string) {
+    async downloadImage(@BodyParam("imageId") imageId: string) {
         // Find image and get image data
         var image = await Images.findById(imageId);
         if (image == null) {
@@ -290,6 +325,33 @@ export default class PostController {
             imageData: image.imageData
         });
     }
+    
+    @Authorized()
+    @Post("/getAllPostsForCategory")
+    async getAllPostsForCategory(@BodyParam("category") category: string) {
+        // ...
+        // Get all posts for category
+        var posts = await Posts.find({ category: category }).lean();
+        return posts;
+    }
+
+    /*@Authorized()
+    @Post("/getPostsForCategory")
+    async getPostsForCategory(@BodyParam("category") category: string,
+        @BodyParam("start") start: number,
+        @BodyParam("count") count: number) {
+        // Get all posts for category
+        var posts = await Posts.find({ category: category }).skip(start).limit(count).lean();
+        return posts;
+    }
+    
+    @Authorized()
+    @Post("/getMyPosts") // get all posts (even unlisted/sold, but don't get deleted posts)
+    async getMyPosts(@BodyParam("category", { required: false }) category: string,
+        @BodyParam("start", { required: false }) start: number,
+        @BodyParam("count", { required: false }) count: number) {
+        // ...
+    }*/
 
     // TODO: Get Posts (for category - if category is empty-> get users posts, filter out sold/unlisted, etc.), return date posted too!
 }

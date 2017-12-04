@@ -1,6 +1,7 @@
 enum Result {
     Ok = 1000,
     InternalError = 1001,
+    Unauthorized = 1002,
     
     InvalidUserId = 1100,
     InvalidCredentials = 1101,

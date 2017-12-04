@@ -1,7 +1,4 @@
-import { RoleType } from "../../Models/User";
+import { SessionData } from "../../Models/Session";
 
-export default interface AuthResult {
-    authorized: boolean;
-    userId: string;
-    role: RoleType;
+export default interface AuthResult extends SessionData {
 }
