@@ -23,7 +23,10 @@ export default class PostController {
         @BodyParam("tags", { required: false }) tags: string[], 
         @BodyParam("price") price: number,
         @BodyParam("currency") currency: string,
-        @BodyParam("body") body: string) {
+        @BodyParam("body") body: string,
+        @BodyParam("location") location: string,
+        @BodyParam("latitude", { required: false }) latitude: number,
+        @BodyParam("longitude", { required: false }) longitude: number) {
         // Create post
         var post = await Posts.create(<IPost> {
             authorId: session.data.userId,
@@ -36,7 +39,10 @@ export default class PostController {
             imageIds: [],
             thumbnailId: null,
             thumbnailImageId: null,
-            body: body
+            body: body,
+            location: location,
+            latitude: latitude,
+            longitude: longitude
         });
 
         return new Result(ResultCode.Ok, <BasicIdResult> {
@@ -282,7 +288,10 @@ export default class PostController {
         @BodyParam("tags", { required: false }) tags: string[], 
         @BodyParam("price", { required: false }) price: number,
         @BodyParam("currency", { required: false }) currency: string,
-        @BodyParam("body", { required: false }) body: string) {
+        @BodyParam("body", { required: false }) body: string,
+        @BodyParam("location", { required: false }) location: string,
+        @BodyParam("latitude", { required: false }) latitude: number,
+        @BodyParam("longitude", { required: false }) longitude: number) {
         // Get post
         var post = await Posts.findById(postId);
         if (post == null) {
@@ -298,11 +307,14 @@ export default class PostController {
 
         // Update post
         if (title != null) post.title = title;
-        if (category != null) post.category = category; // NOTE: We probably shouldn't allow modification of this, but oh well
+        //if (category != null) post.category = category;
         if (tags != null) post.tags = tags;
         if (price != null) post.price = price;
         if (currency != null) post.currency = currency;
         if (body != null) post.body = body;
+        if (location != null) post.location = location;
+        if (latitude != null) post.latitude = latitude;
+        if (longitude != null) post.longitude = longitude;
 
         await post.save();
 
@@ -328,29 +340,56 @@ export default class PostController {
     
     @Authorized()
     @Post("/getAllPostsForCategory")
-    async getAllPostsForCategory(@BodyParam("category") category: string) {
+    async getAllPostsForCategory(@BodyParam("category") category: string,
+        @BodyParam("tags", { required: false }) tags: string[]) {
+        // Convert tags to regex
+        var regexTags = [];
+        tags.forEach(tag => {
+            regexTags.push(new RegExp(tag, "i"));
+        });
+
         // Get all posts for category
-        var posts = await Posts.find({ category: category }); // TODO: Restrict unlisted and stuff
+        var posts = await Posts.find({ 
+            category: category,
+            tags: { $all: regexTags },
+            status: PostStatus.Listed
+        });
         return new Result(ResultCode.Ok, posts, true);
     }
 
     @Authorized()
     @Post("/getPostsForCategory")
     async getPostsForCategory(@BodyParam("category") category: string,
+        @BodyParam("tags", { required: false }) tags: string[],
         @BodyParam("start") start: number,
         @BodyParam("count") count: number) {
+        // Convert tags to regex
+        var regexTags = [];
+        tags.forEach(tag => {
+            regexTags.push(new RegExp(tag, "i"));
+        });
+
         // Get all posts for category
-        var posts = await Posts.find({ category: category }).skip(start).limit(count)
+        var posts = await Posts.find({ 
+            category: category,
+            tags: { $all: regexTags },
+            status: PostStatus.Listed
+        }).skip(start).limit(count);
         return new Result(ResultCode.Ok, posts, true);
     }
     
     @Authorized()
-    @Post("/getMyPosts") // get all posts (even unlisted/sold, but don't get deleted posts)
-    async getMyPosts(@BodyParam("category", { required: false }) category: string,
-        @BodyParam("start", { required: false }) start: number,
-        @BodyParam("count", { required: false }) count: number) {
-        // ...
+    @Post("/getMyPosts")
+    async getMyPosts(@Session() session: ISession) {
+        // Get all posts for user
+        var posts = await Posts.find({
+            authorId: session.data.userId,
+            $or: [ 
+                { status: PostStatus.Listed }, 
+                { status: PostStatus.Unlisted }, 
+                { status: PostStatus.Sold } 
+            ]
+        });
+        return new Result(ResultCode.Ok, posts, true);
     }
-
-    // TODO: Get Posts (for category - if category is empty-> get users posts, filter out sold/unlisted, etc.), return date posted too!
 }

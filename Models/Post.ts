@@ -20,6 +20,9 @@ export interface IPost extends Document {
     thumbnailId: string;
     thumbnailImageId: string;
     body: string;
+    location: string;
+    latitude: number;
+    longitude: number;
 }
 
 export const PostSchema = SchemaHelper.Create({
@@ -33,7 +36,10 @@ export const PostSchema = SchemaHelper.Create({
     imageIds: [ String ],
     thumbnailId: String,
     thumbnailImageId: String,
-    body: String
+    body: String,
+    location: String,
+    latitude: Number,
+    longitude: Number
 });
 
 export const Posts: Model<IPost> = model<IPost>("Post", PostSchema);
