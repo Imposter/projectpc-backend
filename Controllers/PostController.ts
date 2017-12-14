@@ -2,6 +2,7 @@ import Result from "../Core/Result";
 import ResultCode from "../Core/ResultCode";
 import ResultError from "../Core/ResultError";
 import BasicIdResult from "../Models/Results/BasicIdResult";
+import ArrayResult from "../Models/Results/ArrayResult";
 import { ISession } from "../Models/Session";
 import { RoleType } from "../Models/User";
 import DownloadImageResult from "../Models/Results/DownloadImageResult";
@@ -354,7 +355,9 @@ export default class PostController {
             tags: { $all: regexTags },
             status: PostStatus.Listed
         });
-        return new Result(ResultCode.Ok, posts, true);
+        return new Result(ResultCode.Ok, <ArrayResult<IPost>> {
+            result: posts
+        }, true);
     }
 
     @Authorized()
@@ -375,7 +378,9 @@ export default class PostController {
             tags: { $all: regexTags },
             status: PostStatus.Listed
         }).skip(start).limit(count);
-        return new Result(ResultCode.Ok, posts, true);
+        return new Result(ResultCode.Ok, <ArrayResult<IPost>> {
+            result: posts
+        }, true);
     }
     
     @Authorized()
@@ -390,6 +395,8 @@ export default class PostController {
                 { status: PostStatus.Sold } 
             ]
         });
-        return new Result(ResultCode.Ok, posts, true);
+        return new Result(ResultCode.Ok, <ArrayResult<IPost>> {
+            result: posts
+        }, true);
     }
 }

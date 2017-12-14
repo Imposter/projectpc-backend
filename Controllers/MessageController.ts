@@ -2,7 +2,7 @@ import Result from "../Core/Result";
 import ResultCode from "../Core/ResultCode";
 import ResultError from "../Core/ResultError";
 import BasicIdResult from "../Models/Results/BasicIdResult";
-import GetMessagesResult from "../Models/Results/GetMessagesResult";
+import ArrayResult from "../Models/Results/ArrayResult";
 import { ISession } from "../Models/Session";
 import { Messages, IMessage } from "../Models/Message";
 import { PostStatus, Posts, IPost } from "../Models/Post";
@@ -59,9 +59,9 @@ export default class MessageController {
             $or: [ { senderId: session.data.userId }, { targetId: session.data.userId } ]
         });
 
-        return new Result(ResultCode.Ok, <GetMessagesResult> {
-            messages: messages
-        });
+        return new Result(ResultCode.Ok, <ArrayResult<IMessage>> {
+            result: messages
+        }, true);
     }
 
     @Authorized()
@@ -70,12 +70,25 @@ export default class MessageController {
         // Get all messages which refer to user
         var messages = await Messages.find({
             $or: [ { senderId: session.data.userId }, { targetId: session.data.userId } ]
-        }).lean();
-        
-        return new Result(ResultCode.Ok, <GetMessagesResult> {
-            messages: messages
         });
+        
+        return new Result(ResultCode.Ok, <ArrayResult<IMessage>> {
+            result: messages
+        }, true);
     }
-
-    // TODO: Add getMessagesSince method, which the app will use to send requests periodically to get new messages
+    
+    @Authorized()
+    @Post("/getAllMessagesSince")
+    async getAllMessagesSince(@Session() session: ISession,
+        @BodyParam("time") time: Date) {
+        // Get all messages which refer to user
+        var messages = await Messages.find({
+            targetId: session.data.userId,
+            updatedAt: { $gt: time }
+        });
+            
+        return new Result(ResultCode.Ok, <ArrayResult<IMessage>> {
+            result: messages
+        }, true);
+    }
 }

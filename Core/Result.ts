@@ -1,4 +1,5 @@
 import ResultCode from "./ResultCode";
+import ArrayResult from "../Models/Results/ArrayResult";
 
 export default class Result {
     private code: ResultCode;
@@ -6,18 +7,24 @@ export default class Result {
 
     constructor(code: ResultCode, data?: any, convert?: boolean) {
         this.code = code;
-        this.data = convert ? Result.toJSONArray(data) : data;
+        this.data = data;
+        if (convert) {
+            var arrayResult: ArrayResult<Object> = data;
+            arrayResult.result = Result.toJSONArray(arrayResult.result);
+            this.data = arrayResult;
+        }
     }
 
-    private static toJSONArray(elems: any[]) {
+    private static toJSONArray(elements: any[]) {
         var result = [];
-        elems.forEach(element => {
+        for (var i = 0; i < elements.length; i++) {
+            var element = elements[i];
             if (Array.isArray(element)) {
                 result.push(Result.toJSONArray(element));
             } else {
                 result.push(element.toJSON());
             }
-        });
+        }
         return result;
     }
 }
