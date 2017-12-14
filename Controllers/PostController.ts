@@ -355,9 +355,9 @@ export default class PostController {
             tags: { $all: regexTags },
             status: PostStatus.Listed
         });
-        return new Result(ResultCode.Ok, <ArrayResult<IPost>> {
+        return Result.CreateArrayResult(ResultCode.Ok, <ArrayResult<IPost>> {
             result: posts
-        }, true);
+        });
     }
 
     @Authorized()
@@ -378,9 +378,9 @@ export default class PostController {
             tags: { $all: regexTags },
             status: PostStatus.Listed
         }).skip(start).limit(count);
-        return new Result(ResultCode.Ok, <ArrayResult<IPost>> {
+        return Result.CreateArrayResult(ResultCode.Ok, <ArrayResult<IPost>> {
             result: posts
-        }, true);
+        });
     }
     
     @Authorized()
@@ -395,8 +395,16 @@ export default class PostController {
                 { status: PostStatus.Sold } 
             ]
         });
-        return new Result(ResultCode.Ok, <ArrayResult<IPost>> {
+        return Result.CreateArrayResult(ResultCode.Ok, <ArrayResult<IPost>> {
             result: posts
-        }, true);
+        });
+    }
+
+    @Authorized()
+    @Post("/getPost")
+    async getPost(@BodyParam("postId") postId: string) {
+        // Get post
+        var post = await Posts.findById(postId);
+        return Result.CreateDataResult(ResultCode.Ok, post);
     }
 }

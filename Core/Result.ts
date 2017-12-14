@@ -5,14 +5,9 @@ export default class Result {
     private code: ResultCode;
     private data: any;
 
-    constructor(code: ResultCode, data?: any, convert?: boolean) {
+    constructor(code: ResultCode, data?: any) {
         this.code = code;
         this.data = data;
-        if (convert) {
-            var arrayResult: ArrayResult<Object> = data;
-            arrayResult.result = Result.toJSONArray(arrayResult.result);
-            this.data = arrayResult;
-        }
     }
 
     private static toJSONArray(elements: any[]) {
@@ -26,5 +21,18 @@ export default class Result {
             }
         }
         return result;
+    }
+
+    public static CreateResult(code: ResultCode) {
+        return new Result(code);
+    }
+
+    public static CreateDataResult(code: ResultCode, data?: any) {
+        return new Result(code, data.toJSON());
+    }
+
+    public static CreateArrayResult<TData>(code: ResultCode, arrayResult: ArrayResult<TData>): Result {
+        arrayResult.result = Result.toJSONArray(arrayResult.result);
+        return new Result(code, arrayResult);
     }
 }

@@ -59,9 +59,9 @@ export default class MessageController {
             $or: [ { senderId: session.data.userId }, { targetId: session.data.userId } ]
         });
 
-        return new Result(ResultCode.Ok, <ArrayResult<IMessage>> {
+        return Result.CreateArrayResult(ResultCode.Ok, <ArrayResult<IMessage>> {
             result: messages
-        }, true);
+        });
     }
 
     @Authorized()
@@ -72,9 +72,9 @@ export default class MessageController {
             $or: [ { senderId: session.data.userId }, { targetId: session.data.userId } ]
         });
         
-        return new Result(ResultCode.Ok, <ArrayResult<IMessage>> {
+        return Result.CreateArrayResult(ResultCode.Ok, <ArrayResult<IMessage>> {
             result: messages
-        }, true);
+        });
     }
     
     @Authorized()
@@ -87,8 +87,8 @@ export default class MessageController {
             updatedAt: { $gt: time }
         });
             
-        return new Result(ResultCode.Ok, <ArrayResult<IMessage>> {
+        return Result.CreateArrayResult(ResultCode.Ok, <ArrayResult<IMessage>> {
             result: messages
-        }, true);
+        });
     }
 }
