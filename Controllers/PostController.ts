@@ -257,7 +257,8 @@ export default class PostController {
     @Authorized()
     @Post("/setListed")
     async setListed(@Session() session: ISession,
-        @BodyParam("postId") postId: string) {
+        @BodyParam("postId") postId: string,
+        @BodyParam("listed") listed: boolean) {
         var post = await Posts.findById(postId);
         if (post == null || post.authorId != session.data.userId) {
             return new Result(ResultCode.InvalidPostId);
@@ -271,7 +272,7 @@ export default class PostController {
         }
 
         // Update post
-        post.status = PostStatus.Listed;
+        post.status = listed ? PostStatus.Listed : PostStatus.Unlisted;
         await post.save();
 
         // Send response
