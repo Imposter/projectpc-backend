@@ -77,6 +77,10 @@ export default class PostController {
         // Remove thumbnail
         Storage.Remove(post.thumbnailId);
 
+        // Set post as unlisted
+        post.status = PostStatus.Deleted;
+        post.save();
+
         return new Result(ResultCode.Ok, <BasicIdResult> {
             id: postId
         });
