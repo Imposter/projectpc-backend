@@ -346,16 +346,25 @@ export default class PostController {
         @BodyParam("tags", { required: false }) tags: string[]) {
         // Convert tags to regex
         var regexTags = [];
-        tags.forEach(tag => {
-            regexTags.push(new RegExp(tag, "i"));
-        });
+        if (tags != null) {
+            tags.forEach(tag => {
+                regexTags.push(new RegExp(tag, "i"));
+            });
+        }
 
         // Get all posts for category
-        var posts = await Posts.find({ 
-            category: category,
+        var query = { 
+            category: new RegExp(category, "i"),
             tags: { $all: regexTags },
             status: PostStatus.Listed
-        });
+        };
+        
+        // Remove tags from query if non-existent
+        if (regexTags.length == 0) {
+            delete query.tags;
+        }
+
+        var posts = await Posts.find(query);
         return Result.CreateArrayResult(ResultCode.Ok, <ArrayResult<IPost>> {
             result: posts
         });
@@ -369,16 +378,26 @@ export default class PostController {
         @BodyParam("count") count: number) {
         // Convert tags to regex
         var regexTags = [];
-        tags.forEach(tag => {
-            regexTags.push(new RegExp(tag, "i"));
-        });
+        if (tags != null) {
+            tags.forEach(tag => {
+                regexTags.push(new RegExp(tag, "i"));
+            });
+        }
 
-        // Get all posts for category
-        var posts = await Posts.find({ 
-            category: category,
+        // Get posts for category
+        var query = { 
+            category: new RegExp(category, "i"),
             tags: { $all: regexTags },
             status: PostStatus.Listed
-        }).skip(start).limit(count);
+        };
+        
+        // Remove tags from query if non-existent
+        if (regexTags.length == 0) {
+            delete query.tags;
+        }
+
+        // Get posts for category
+        var posts = await Posts.find(query).skip(start).limit(count);
         return Result.CreateArrayResult(ResultCode.Ok, <ArrayResult<IPost>> {
             result: posts
         });
