@@ -258,8 +258,7 @@ export default class PostController {
     @Post("/update")
     async update(@Session() session: ISession,
         @BodyParam("postId") postId: string, 
-        @BodyParam("title", { required: false }) title: string, 
-        @BodyParam("category", { required: false }) category: string,
+        @BodyParam("title", { required: false }) title: string,
         @BodyParam("tags", { required: false }) tags: string[], 
         @BodyParam("price", { required: false }) price: number,
         @BodyParam("currency", { required: false }) currency: string,
@@ -282,7 +281,6 @@ export default class PostController {
 
         // Update post
         if (title != null) post.title = title;
-        //if (category != null) post.category = category;
         if (tags != null) post.tags = tags;
         if (price != null) post.price = price;
         if (currency != null) post.currency = currency;
