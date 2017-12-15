@@ -10,6 +10,7 @@ export enum PostStatus {
 
 export interface IPost extends Document {
     authorId: string;
+    authorEmail: string;
     status: PostStatus;
     title: string;
     category: string;
@@ -27,6 +28,7 @@ export interface IPost extends Document {
 
 export const PostSchema = SchemaHelper.Create({
     authorId: String,
+    authorEmail: String,
     status: Number,
     title: String,
     category: String,

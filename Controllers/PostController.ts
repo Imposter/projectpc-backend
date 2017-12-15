@@ -32,6 +32,7 @@ export default class PostController {
         // Create post
         var post = await Posts.create(<IPost> {
             authorId: session.data.userId,
+            authorEmail: session.data.email,
             status: PostStatus.Unlisted,
             title: title,
             category: category,
@@ -49,7 +50,7 @@ export default class PostController {
 
         return new Result(ResultCode.Ok, <BasicIdResult> {
             id: post._id.toString()
-        })
+        });
     }
 
     @Authorized()
