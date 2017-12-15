@@ -61,6 +61,13 @@ export default class PostController {
         if (post == null) {
             return new Result(ResultCode.InvalidPostId);
         }
+        
+        // Check if user created the post or is an admin
+        if (post.authorId != session.data.userId
+            && (session.data.role != RoleType.Moderator.valueOf()
+                || session.data.role != RoleType.Admin.valueOf())) {
+            return new Result(ResultCode.Unauthorized);
+        }
 
         // Remove all images
         post.imageIds.forEach(imageId => {
