@@ -16,7 +16,7 @@ const sharp = require("sharp");
 export default class PostController {
     private static MAX_IMAGES = 8;
     private static THUMBNAIL_RESIZE_WIDTH = 120; // px
-    private static RESIZE_WIDTH = 420; // px
+    private static RESIZE_WIDTH = 800; // px
 
     @Authorized()
     @Post("/create")
@@ -77,6 +77,9 @@ export default class PostController {
             return new Result(ResultCode.ImageLimitReached);
         }
 
+        // Resize image
+        imageData = await this.resizeImage(imageData, PostController.RESIZE_WIDTH);        
+
         // Insert image
         var imageId = await Storage.Save(imageData);
 
@@ -90,14 +93,8 @@ export default class PostController {
                 await Storage.Remove(post.thumbnailId);
             }
 
-            // Decode image from base64
-            var rawImageData = Buffer.from(imageData, "base64");
-
-            // Resize buffer
-            var rawThumbnailData = await sharp(rawImageData).resize(PostController.RESIZE_WIDTH, null).toBuffer();
-            
-            // Encode image to base64
-            var thumbnailData = rawThumbnailData.toString("base64");
+            // Resize thumbnail
+            var thumbnailData = await this.resizeImage(imageData, PostController.THUMBNAIL_RESIZE_WIDTH);
 
             // Insert thumbnail into storage
             var thumbnailImageId = await Storage.Save(thumbnailData);
@@ -157,14 +154,8 @@ export default class PostController {
             // Find first image
             var imageData = await Storage.Get(post.imageIds[0]);
 
-            // Decode image from base64
-            var rawImageData = Buffer.from(imageData.toString(), "base64");
-            
-            // Resize buffer
-            var rawThumbnailData = await sharp(rawImageData).resize(PostController.RESIZE_WIDTH, null).toBuffer();
-            
-            // Encode image to base64
-            var thumbnailData = rawThumbnailData.toString("base64");
+            // Resize thumbnail
+            var thumbnailData = await this.resizeImage(imageData.toString(), PostController.THUMBNAIL_RESIZE_WIDTH);            
 
             // Insert thumbnail into storage
             var thumbnailId = await Storage.Save(thumbnailData);
@@ -218,15 +209,9 @@ export default class PostController {
             await Storage.Remove(post.thumbnailId);
         }
 
-        // Decode image from base64
-        var rawImageData = Buffer.from(image.toString(), "base64");
-
-        // Resize buffer
-        var rawThumbnailData = await sharp(rawImageData).resize(PostController.RESIZE_WIDTH, null).toBuffer();
-            
-        // Encode image to base64
-        var thumbnailData = rawThumbnailData.toString("base64");
-
+        // Resize thumbnail
+        var thumbnailData = await this.resizeImage(image.toString(), PostController.THUMBNAIL_RESIZE_WIDTH);
+        
         // Insert thumbnail into storage
         var thumbnailId = await Storage.Save(thumbnailData);
 
@@ -415,5 +400,16 @@ export default class PostController {
         // Get post
         var post = await Posts.findById(postId);
         return Result.CreateDataResult(ResultCode.Ok, post);
+    }
+
+    async resizeImage(image: string, width?: number, height?: number) {
+        // Decode image from base64
+        var rawImageData = Buffer.from(image, "base64");
+
+        // Resize buffer
+        rawImageData = await sharp(rawImageData).resize(width, height).toBuffer();
+            
+        // Encode image to base64
+        return rawImageData.toString("base64");
     }
 }
