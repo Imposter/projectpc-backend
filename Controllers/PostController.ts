@@ -3,18 +3,20 @@ import ResultCode from "../Core/ResultCode";
 import ResultError from "../Core/ResultError";
 import BasicIdResult from "../Models/Results/BasicIdResult";
 import ArrayResult from "../Models/Results/ArrayResult";
+import Storage from "../Utility/Storage";
 import { ISession } from "../Models/Session";
 import { RoleType } from "../Models/User";
 import DownloadImageResult from "../Models/Results/DownloadImageResult";
 import { PostStatus, Posts, IPost } from "../Models/Post";
-import { Images, IImage } from "../Models/Image";
 import { JsonController, Get, Post, Delete, Authorized, Req, Session, BodyParam, InternalServerError, BadRequestError, HttpError } from "routing-controllers";
+
 const sharp = require("sharp");
 
 @JsonController("/post")
 export default class PostController {
     private static MAX_IMAGES = 8;
-    private static RESIZE_WIDTH = 240; // px
+    private static THUMBNAIL_RESIZE_WIDTH = 120; // px
+    private static RESIZE_WIDTH = 420; // px
 
     @Authorized()
     @Post("/create")
@@ -76,19 +78,16 @@ export default class PostController {
         }
 
         // Insert image
-        var image = await Images.create(<IImage> {
-            postId: post._id.toString(),
-            imageData: imageData
-        });
+        var imageId = await Storage.Save(imageData);
 
         // Update post with new image id
-        post.imageIds.push(image._id.toString()) - 1;
+        post.imageIds.push(imageId);
 
         // Do we have to generate a thumbnail?
         if (thumbnail) {
             // Remove previous thumbnail if any
             if (post.thumbnailId != null) {
-                await Images.findByIdAndRemove(post.thumbnailId);
+                await Storage.Remove(post.thumbnailId);
             }
 
             // Decode image from base64
@@ -100,15 +99,12 @@ export default class PostController {
             // Encode image to base64
             var thumbnailData = rawThumbnailData.toString("base64");
 
-            // Insert thumbnail into database
-            var thumbnailImage = await Images.create(<IImage> {
-                postId: post._id.toString(),
-                imageData: thumbnailData
-            });
+            // Insert thumbnail into storage
+            var thumbnailImageId = await Storage.Save(thumbnailData);
 
             // Update post with thumbnail id and index
-            post.thumbnailId = thumbnailImage._id.toString();
-            post.thumbnailImageId = image._id.toString();
+            post.thumbnailId = thumbnailImageId;
+            post.thumbnailImageId = imageId;
         }
         
         // Update post
@@ -116,7 +112,7 @@ export default class PostController {
 
         // Send response
         return new Result(ResultCode.Ok, <BasicIdResult> {
-            id: image._id.toString()
+            id: imageId
         });
     }
 
@@ -145,25 +141,24 @@ export default class PostController {
         }
 
         // Remove image
-        var image = await Images.findOneAndRemove(imageId);
+        await Storage.Remove(imageId);
         post.imageIds = post.imageIds.splice(index, 1);
 
         // Remove thumbnail
         if (post.thumbnailImageId == imageId) {
-            await Images.findByIdAndRemove(post.thumbnailId);
+            await Storage.Remove(post.thumbnailId);
 
             post.thumbnailId = null;
             post.thumbnailImageId = post.imageIds.length == 0 ? null : post.imageIds[0];
         }
 
         // If any available image, set as thumbnail
-        if (post.thumbnailId == null) {
+        if (post.thumbnailId == null && post.imageIds.length > 0) {
             // Find first image
-            var firstImage = await Images.findById(post.imageIds[0]);
-            var imageData = firstImage.imageData;
+            var imageData = await Storage.Get(post.imageIds[0]);
 
             // Decode image from base64
-            var rawImageData = Buffer.from(imageData, "base64");
+            var rawImageData = Buffer.from(imageData.toString(), "base64");
             
             // Resize buffer
             var rawThumbnailData = await sharp(rawImageData).resize(PostController.RESIZE_WIDTH, null).toBuffer();
@@ -171,14 +166,11 @@ export default class PostController {
             // Encode image to base64
             var thumbnailData = rawThumbnailData.toString("base64");
 
-            // Insert thumbnail into database
-            var thumbnailImage = await Images.create(<IImage> {
-                postId: post._id.toString(),
-                imageData: thumbnailData
-            });
+            // Insert thumbnail into storage
+            var thumbnailId = await Storage.Save(thumbnailData);
 
             // Update post with thumbnail id and index
-            post.thumbnailId = thumbnailImage._id.toString();
+            post.thumbnailId = thumbnailId;
             post.thumbnailImageId = post.imageIds[0];
         }
         
@@ -187,7 +179,7 @@ export default class PostController {
 
         // Send response
         return new Result(ResultCode.Ok, <BasicIdResult> {
-            id: image._id.toString()
+            id: imageId
         });
     }
 
@@ -216,18 +208,18 @@ export default class PostController {
         }
 
         // Find image and get image data
-        var image = await Images.findById(imageId);
+        var image = await Storage.Get(imageId);
         if (image == null) {
             return new Result(ResultCode.InternalError);
         }
 
         // Remove previous thumbnail if any
         if (post.thumbnailId != null) {
-            await Images.findByIdAndRemove(post.thumbnailId);
+            await Storage.Remove(post.thumbnailId);
         }
 
         // Decode image from base64
-        var rawImageData = Buffer.from(image.imageData, "base64");
+        var rawImageData = Buffer.from(image.toString(), "base64");
 
         // Resize buffer
         var rawThumbnailData = await sharp(rawImageData).resize(PostController.RESIZE_WIDTH, null).toBuffer();
@@ -235,14 +227,11 @@ export default class PostController {
         // Encode image to base64
         var thumbnailData = rawThumbnailData.toString("base64");
 
-        // Insert thumbnail into database
-        var thumbnail = await Images.create(<IImage> {
-            postId: post._id.toString(),
-            imageData: thumbnailData
-        });
+        // Insert thumbnail into storage
+        var thumbnailId = await Storage.Save(thumbnailData);
 
         // Update post with thumbnail id
-        post.thumbnailId = thumbnail._id.toString();
+        post.thumbnailId = thumbnailId;
         post.thumbnailImageId = imageId;
         
         // Update post
@@ -250,7 +239,7 @@ export default class PostController {
 
         // Send response
         return new Result(ResultCode.Ok, <BasicIdResult> {
-            id: image._id.toString()
+            id: imageId
         });
     }
 
@@ -329,14 +318,14 @@ export default class PostController {
     @Post("/downloadImage")
     async downloadImage(@BodyParam("imageId") imageId: string) {
         // Find image and get image data
-        var image = await Images.findById(imageId);
+        var image = await Storage.Get(imageId);
         if (image == null) {
             return new Result(ResultCode.InvalidImageId);
         }
 
         // Send response
         return new Result(ResultCode.Ok, <DownloadImageResult> {
-            imageData: image.imageData
+            imageData: image.toString()
         });
     }
     

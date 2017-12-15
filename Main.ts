@@ -1,6 +1,7 @@
 ﻿import { IConfig } from "./IConfig";
 import ClusterManager from "./Utility/ClusterManager";
 import AuthChecker from "./Core/AuthChecker";
+import Storage from "./Utility/Storage";
 import "reflect-metadata";
 import * as rc from "routing-controllers";
 import * as mongoose from "mongoose";
@@ -64,6 +65,9 @@ async function main() {
 			requestCert: true
 		}, this.app);
 	}
+
+	// Initialize storage
+	Storage.Initialize(`file://${__dirname}/${config.imagePath}`);	
 
 	// Trust proxy if behind one
 	if (config.behindProxy) {

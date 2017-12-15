@@ -15,8 +15,9 @@ export interface IConfig {
     keyPath?: string;
     certPath?: string;
     behindProxy?: boolean;
+    imagePath: string;
     sessionSecret: string;
     sessionTimeout?: number;
     mongo: IMongoConfig;
-    log?: log4js.IConfig;
+    log?: log4js.Configuration;
 }
