@@ -70,7 +70,9 @@ export default class PostController {
         // Remove thumbnail
         Storage.Remove(post.thumbnailId);
 
-        return new Result(ResultCode.Ok);
+        return new Result(ResultCode.Ok, <BasicIdResult> {
+            id: postId
+        });
     }
 
     @Authorized()
