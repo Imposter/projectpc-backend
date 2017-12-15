@@ -53,6 +53,27 @@ export default class PostController {
     }
 
     @Authorized()
+    @Post("/delete")
+    async delete(@Session() session: ISession,
+        @BodyParam("postId") postId: string) {
+        // Check if post id is valid
+        var post = await Posts.findById(postId);
+        if (post == null) {
+            return new Result(ResultCode.InvalidPostId);
+        }
+
+        // Remove all images
+        post.imageIds.forEach(imageId => {
+            Storage.Remove(imageId);
+        });
+
+        // Remove thumbnail
+        Storage.Remove(post.thumbnailId);
+
+        return new Result(ResultCode.Ok);
+    }
+
+    @Authorized()
     @Post("/uploadImage")
     async uploadImage(@Session() session: ISession,
         @BodyParam("postId") postId: string,
