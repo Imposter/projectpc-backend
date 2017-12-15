@@ -7,16 +7,14 @@ The following are requirements to compile and run the server:
 - Node.js with Node Package Manager (npm) ([How to install](https://nodejs.org/en/download/))
 - Typings for Node.js ([How to install](https://www.npmjs.com/package/typings))
 - Typescript v2.2 ([How to install](https://www.typescriptlang.org/index.html#download-links))
-- MongoDB v3.6 server ([How to install](https://docs.mongodb.com/manual/tutorial/install-mongodb-on-windows/))
+- MongoDB v3.6 server and database ([How to install](https://docs.mongodb.com/manual/tutorial/install-mongodb-on-windows/))
 
 ### Compiling/Installing
 1. Run `npm install` to install Node.js packages
 4. Run `tsc` to compile the Typescript code into runnable Javascript (You may receive compiling errors for some Node modules, but those can be ignored)
-5. Copy `config-dev.example.json` to `config-dev.json` and substitute `mongo` with your server configuration
+5. Copy `config-dev.example.json` to `build/config-dev.json` and substitute `mongo` with your server and database configuration
 6. Change directory to `build` using `cd build`
 6. Run server using `node Main.js`
- 
-###### Note: The server you start will not be used by the application unless the source is modified to connect to the endpoint the server is running on, and will instead use the default server hosted by us.
 
 ### Authors
 - Thaghsan Mohanarathnam
