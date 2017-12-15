@@ -12,7 +12,7 @@ The following are requirements to compile and run the server:
 ### Compiling/Installing
 1. Run `npm install` to install Node.js packages
 4. Run `tsc` to compile the Typescript code into runnable Javascript (You may receive compiling errors for some Node modules, but those can be ignored)
-5. Copy `config.example.json` to `config.json` and substitute `mongo` with your server configuration
+5. Copy `config-dev.example.json` to `config-dev.json` and substitute `mongo` with your server configuration
 6. Change directory to `build` using `cd build`
 6. Run server using `node Main.js`
  
