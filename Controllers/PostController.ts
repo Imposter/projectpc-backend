@@ -9,14 +9,13 @@ import { RoleType } from "../Models/User";
 import DownloadImageResult from "../Models/Results/DownloadImageResult";
 import { PostStatus, Posts, IPost } from "../Models/Post";
 import { JsonController, Get, Post, Delete, Authorized, Req, Session, BodyParam, InternalServerError, BadRequestError, HttpError } from "routing-controllers";
-
 const sharp = require("sharp");
 
 @JsonController("/post")
 export default class PostController {
     private static MAX_IMAGES = 8;
-    private static THUMBNAIL_RESIZE_WIDTH = 120; // px
-    private static RESIZE_WIDTH = 800; // px
+    private static THUMBNAIL_RESIZE_WIDTH = 64; // px
+    private static RESIZE_WIDTH = 512; // px
 
     @Authorized()
     @Post("/create")
